@@ -1,0 +1,116 @@
+---
+title: "Stepwise Regression for Event Studies"
+author: "Peter Caya"
+date: "04/28/2016"
+output: html_document
+---
+# Market Models and Stepwise Regression
+
+Financial analysis often requires the construction of a trade model for one reason or another.  It can be used in as a tool in inferential statistics to identify days where a security deviates from the market, or it can be used to create a model with predictive power.  The market model I will consider will involve a general market factor, $\beta_{m}$ and an industry factor, $\beta_{i}$:
+$$    r_f = \beta_{m} r_{m} + \beta_{i} r_{i} + \epsilon    $$
+
+Where $r$ represents the return on the stock (f), market (m), or industry (i), and $\epsilon$ represents model noise.  
+
+## Building a Suitable Model
+
+While the model above has specific factors and is the very familiar OLS, proper index selection makes all the difference in the quality of our results.  The causes of this are due to the securities which are part of the contituent indexes.  Aside from requiring a wide range of securities in the general market index, and similar industry securities in the industry index, we must also consider factors such as the size of the contituent firms, among other factors which are less easy to quantify.
+
+While the above framework tells us what we should look for when putting together the model, we are faced with the issue of identifying the indexes or other securities which provide the best model.  This is where having an automated method of model selection can help.
+
+## Stepwise Regression: The Procedure and its Disadvantages
+
+Stepwise regression employs metrics which evaluate the amount of information a new factor adds to a model.  First, an introductory regression model is created.  In the case of forward stepwise regression this model will contain only a constant, IE:
+
+$$\hat{y} = \hat{\beta_0}$$
+
+
+Alternatively, one could start with a regression model containing all of the posible factors in which case we begin with:
+
+$$\hat{y} = \hat{\beta_0}+ \sum_{i=1}^N \hat{\beta_i} x_i$$.
+
+
+In the case of forward stepwise regression the quality of fit is tested first for the model with only a constant term.  Each factor is then tested as a linear term in the regression model and added if it has been found to improve the fit of the model.  This procedure is continued until the all of the potential factors have been tested and we (in theory at least) are left with the best possible model.  Backwards stepwise regression works similarly except instead of continuously added new terms we subtract them and compare the models.
+
+The criticisms of stepwise regression are rooted in this automatic way of creating a regression model.  In situations where we have a lot of data and causality isn't obvious, one can end up producing a model which is indeed, optimal for the training data, but which does not actually provide a meaningful explanation of the phenomena and which fails with the test data.  David Giles explains it in far better detail than I can in [this](http://davegiles.blogspot.com/2014/07/step-wise-regression.html) blog post:
+
+>The crux of the matter is this. Step-wise regression involves a search for a model specification based on the apparent significance (or otherwise) of various covariates. It's an example of model simplification, rather than model specification. The end result may make little economic sense.
+
+However, if we take a model which has already been thoroughly investigated like CAPM, and then restrict the universe of predictor variables to some grouping which the analyst views as suitable, stepwise regression may become appropriate.  I think that the case of building a simple market model could possibly be an example of this.  If the model produced using stepwise regression is a suitable one in enough situations, it could be a useful tool to pare down the amount of work involved in model creation.
+
+## My Implementation
+
+I am a big fan of the R programming language and that is what I'll be using to implement the stepwise regression.  The raw code can be found at the end of this article.  Data was downloaded from Yahoo Finance using the [quantmod](http://www.quantmod.com/) package.  Stepwise regression was implemented using the [step](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/step.html) function.  Graphs were produced using ggplot2.
+
+## Examples:
+
+### Example 1 - Exxon Mobil
+
+I chose a big company with a lot of market exposure to start off because in general a company with these qualities will be easier to model.  Exxon Mobil is the well known oil and natural gas producer.  To build up a model I will explore competitor companies, broad market indexes, industry indexes, and commodity prices.  With any luck, narrowing our factors down and using stepwise regression to decide on a model of best fit will produce a suitable model to be used on the test data set.  The factors I am testing are:
+
+#### Companies:
+* Royal Dutch Shell (RDS)
+* Chevron (CVX)
+* British Petroleum (BP)
+
+#### Industry Indexes:
+* SPDR S&P Oil & Gas Exploration & Production ETF (XOP)
+* iShares U.S. Energy ETF (IYE)
+* SPDR S&P North American Natural Resources ETF (NANR)
+* Energy Select Sector SPDR Fund (XLE)
+  
+#### Broad Indexes
+* SP 500 (^GSPC)
+* Dow Jones U.S. Large-Cap Growth Total Stock Market Index (DWLG)
+* Morningstar Large Core Total Return ETF (^MLCRT)
+
+
+
+```{r}
+libs = c('quantmod','Quandl', 'ggplot2','reshape')
+lapply( libs,library,character.only = T   )
+XOM.eqs = c('XOM','RDS' , 'CVX','BP') 
+IND = c('XOP','IYE','NANR','XLE' )
+GEN = c('^GSPC', 'DWLG','^MLCRT')  
+getSymbols(XOM.eqs,source='yahoo')
+getSymbols(IND,source='yahoo')
+getSymbols(GEN,source='yahoo')
+
+
+```
+
+
+
+### Example 2 - Fifth Street Financial
+
+
+
+
+
+### Example 3 - TBD
+
+## Appendix:  R Code
+
+
+
+
+
+```{r,echo = TRUE , message = FALSE, eval = FALSE}
+libs = c('quantmod','Quandl', 'ggplot2','reshape')
+lapply( libs,library,character.only = T   )
+FSC.eqs = c('FSC','ARCC' , 'GLAD') 
+IND = c('XLF','KBE','VFH','IYF','RYF' )
+GEN = c('SPY', 'SLY','^IXIC','^DJI' )  
+getSymbols(FSC.eqs,source='yahoo')
+getSymbols(IND,source='yahoo')
+getSymbols(GEN,source='yahoo')
+```
+
+
+
+
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
